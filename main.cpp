@@ -187,101 +187,76 @@ int setupCoeffiecientAndBMatrix(float** matrix, float* bmatrix, std::vector<std:
     return matrixLength;
 }
 
-//returned value must be deallocated by external source
-float* gaussAndSolve(float** matrix, float* bmatrix, int mLength)
+void jacobiIterative(float error, float* startingVals, float** matrix, int mLength, float* b)
 {
-    float xMultiplier = 0;
-    float r = 0;
-    float rMax = 0;
-    float sMax = 0;
-    int n = mLength;
 
-    float *scaleFactor = new float[n];
-    int *order = new int[n];
-    float *output = new float[n];
-
-    for(int i=0; i<n; i++)
-    {
-        output[i] = 0;
-        scaleFactor[i] = 0;
-        order[i] = i;
-    }
-
-    std::cout << "\nInitial -- " << std::endl;
-    printMatrix(matrix, n,n);
-    printArray(bmatrix, n);
-    std::cout << "Initial -- \n " << std::endl;
-    //SETUP DONE
-
-    int j=0;
-    for(int i=0; i<n; i++)
-    {
-        sMax = 0;
-        for(j=0; j<n; j++)
-            sMax = std::max(sMax,  std::abs(matrix[i][j]));
-        scaleFactor[i] = sMax;
-    }
-    std::cout << "Scale Factor -- " << std::endl;
-    printArray(scaleFactor, n);
-    std::cout << "Scale Factor -- \n " << std::endl;
-
-    for(int k=0; k < n-1; k++)
-    {
-        rMax = 0;
-        for(int i=k; i<n; i++)
-        {
-            r =  std::abs(matrix[ order[i] ][k] / scaleFactor[order[i]]);
-            if (r > rMax)
-            {
-                rMax = r;
-                j = i;
-            }
-        }
-
-        int temp = order[j];
-        order[j] = order[k];
-        order[k] = temp;
-
-        for(int i=k+1; i<n; i++)
-        {
-            xMultiplier = matrix[ order[i] ][k] / matrix[ order[k] ][k];
-            
-            matrix[ order[i] ][k] = xMultiplier;
-
-            for(j=k+1; j<n; j++)
-                matrix[ order[i] ][j] = matrix[ order[i] ][j] - (xMultiplier * matrix[ order[k] ][j]);
-        }
-        std::cout << "Matrix during step k=" << k << std::endl;
-        printMatrix(matrix, n,n);
-        std::cout << "ORDER during step k=" << k << std::endl;
-        printArray(order, n);
-        std::cout << " -- \n" << std::endl;
-    }
-
-    // BMatrix
-    for(int k=0; k<n-1; k++)
-        for(int i=k+1; i<n; i++)
-            bmatrix[order[i]] = bmatrix[order[i]] - (matrix[order[i]][k] * bmatrix[order[k]]);
-
-    output[n-1] = bmatrix[order[n-1]] / matrix[order[n-1]][n-1];
-
-    for(int i=n-1; i>=0; i--)
-    {
-        float sum = bmatrix[order[i]];
-        for(int k=i+1; k<n; k++)
-            sum = sum - matrix[order[i]][k] * output[k];
-        
-        output[i] = sum / matrix[order[i]][i];
-
-    }    
+    float* kthVals = startingVals;   
+    float* nextVals = new float[mLength];
+    for(int i=0; i<mLength; i++)
+        nextVals[i] = 0;
     
-    std::cout << "Xn values" << std::endl;
-    printArray(output, n);
+    int kth_iteration = 0;
+    while(kth_iteration < 50)
+    {
 
-    delete scaleFactor;
-    delete order;
+        for(int i=0; i<mLength; i++)
+        {
+            float alpha = 0;
+            for(int j=0; j< mLength; j++)
+            {
+                if(i== j)
+                    continue;
+                alpha += matrix[i][j] * kthVals[j]; // k th iteration
 
-    return output;
+            }
+            nextVals[i] = ( b[i] - alpha ) / matrix[i][i];
+        }
+        kthVals = nextVals;
+        kth_iteration++;
+    }
+
+    printArray(nextVals, mLength);
+
+    delete nextVals;
+}
+
+bool isDiogonlyDominant(float ** matrix, int length)
+{
+    float activeSum;
+
+    for(int i=0; i<length; i++)
+    {
+        activeSum = 0;
+        for (int j = 0; j < length ; j++)
+        {
+            if(j == i)
+                continue;
+
+            activeSum += matrix[i][j];
+        }   
+        if(activeSum > matrix[i][i])
+            return false;
+    }
+    return true;
+}
+
+bool checkDiagonal(float** matrix, int length)
+{
+    if(isDiogonlyDominant(matrix, length))
+    {
+        std::cout << "The Matrix IS Diagonaly Dominant" << "\n";
+        return true;
+    }
+    else
+    {
+        std::cout << "The Matrix is NOT Diagonaly Dominant" << "\n";
+        std::cout << "Continue ?(y/n) \n  -";
+        std::string input;
+        std::getline(std::cin, input);
+        if(input[0] == 'y')
+            return true;
+        return false;
+    }
 }
 
 int main(int charc, char** charv)
@@ -294,13 +269,20 @@ int main(int charc, char** charv)
     float *solveValues = new float[equationCount];
     int matrixLength = setupCoeffiecientAndBMatrix(coeffiecientMatrix, solveValues, returnVals.first);
 
-    float* outputs = gaussAndSolve(coeffiecientMatrix, solveValues, equationCount);
+    if(checkDiagonal(coeffiecientMatrix, matrixLength))
+    {
+        //float* outputs = gaussAndSolve(coeffiecientMatrix, solveValues, equationCount);
+        float* test = new float[matrixLength];
+            for(int i=0; i<matrixLength; i++)
+                test[i] = 0;;
+        jacobiIterative(10, test, coeffiecientMatrix, matrixLength, solveValues);
+        //delete outputs;
+    }
 
     for(int i=0; i<equationCount; i++)
         delete coeffiecientMatrix[i];
     delete coeffiecientMatrix;
     delete solveValues;
-    delete outputs;
     
 }
 
