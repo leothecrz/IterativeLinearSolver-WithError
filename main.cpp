@@ -11,15 +11,8 @@ void printMatrix(float **matrix, int rows, int cols)
     }
 }
 
-void printArray(float *arr, int cols) 
-{
-    std::cout << "ARRAY: " << "\n";
-    for (int j = 0; j < cols; j++) 
-        std::cout << arr[j] << " ";
-    std::cout << std::endl;
-}
-
-void printArray(int *arr, int cols) 
+template <class T>
+void printArray(T *arr, int cols) 
 {
     std::cout << "ARRAY: " << "\n";
     for (int j = 0; j < cols; j++) 
@@ -46,6 +39,28 @@ bool isNegativeNumber(const std::string str)
     return (str[0] == '-') && (str.find_first_not_of("1234567890", 1) == std::string::npos);
 }
 
+bool stringIsValid(std::string str)
+{
+    return true;
+}
+
+std::vector<std::string> splitString(const std::string& str)
+{
+    std::istringstream stream(str);
+    std::vector<std::string> splits;
+
+    do
+    {
+        std::string active;
+        stream >> active;
+        if(active != "")
+            splits.push_back(active);
+    } 
+    while (stream);
+    
+    return splits;
+}
+
 int getUserEquationCount()
 {
     int stringnum = 0;
@@ -63,11 +78,6 @@ int getUserEquationCount()
     while(stringnum < 1);
     
     return stringnum;
-}
-
-bool stringIsValid(std::string str)
-{
-    return true;
 }
 
 std::pair< std::vector<std::string>, int> manualRows()
@@ -144,23 +154,6 @@ std::pair< std::vector<std::string>, int> getUserInput()
 
 }
 
-std::vector<std::string> splitString(const std::string& str)
-{
-    std::istringstream stream(str);
-    std::vector<std::string> splits;
-
-    do
-    {
-        std::string active;
-        stream >> active;
-        if(active != "")
-            splits.push_back(active);
-    } 
-    while (stream);
-    
-    return splits;
-}
-
 int setupCoeffiecientAndBMatrix(float** matrix, float* bmatrix, std::vector<std::string> stringArrays)
 {
     int matrixLength = splitString( stringArrays.at(0) ) .size() - 1; 
@@ -187,37 +180,96 @@ int setupCoeffiecientAndBMatrix(float** matrix, float* bmatrix, std::vector<std:
     return matrixLength;
 }
 
-void jacobiIterative(float error, float* startingVals, float** matrix, int mLength, float* b)
+float calcLTwoNorm(float* floats, int vectorLength)
 {
+    float sum = 0;
+    for(int i=0; i<vectorLength; i++)    
+        sum += floats[i] * floats[i]; 
+    return std::sqrt(sum);
+}
 
+void jacobiIterative(float stopError, float* startingVals, float** matrix, int mLength, float* b)
+{
+    float error = 0;
     float* kthVals = startingVals;   
     float* nextVals = new float[mLength];
-    for(int i=0; i<mLength; i++)
-        nextVals[i] = 0;
+        for(int i=0; i<mLength; i++)
+            nextVals[i] = 0;
     
     int kth_iteration = 0;
     while(kth_iteration < 50)
     {
-
-        for(int i=0; i<mLength; i++)
+        for(int i=0; i < mLength; i++)
         {
             float alpha = 0;
-            for(int j=0; j< mLength; j++)
+            for(int j=0; j < mLength; j++)
             {
-                if(i== j)
+                if(i == j)
                     continue;
                 alpha += matrix[i][j] * kthVals[j]; // k th iteration
-
             }
             nextVals[i] = ( b[i] - alpha ) / matrix[i][i];
         }
-        kthVals = nextVals;
+        error = calcLTwoNorm(kthVals, mLength) - calcLTwoNorm(nextVals, mLength);
+        error = std::abs(error);
+        error /= calcLTwoNorm(kthVals, mLength);
+
+        std::cout << "ERROR: " << error << "\n";
+
+        for(int i=0; i<mLength; i++)
+            kthVals[i] = nextVals[i];
         kth_iteration++;
+
+        if(stopError >= error)
+            break;
+
     }
 
-    printArray(nextVals, mLength);
-
+    if(kth_iteration++ == 50)
+    {
+        std::cout << "50 Iterations elapsed" << "\n";
+    }
+    printArray<float>(kthVals, mLength);
     delete nextVals;
+}
+
+void gaussSidel(float stopError, float* startingVals, float** matrix, int mLength, float* b)
+{
+    float error = 0;
+    float* kthVals = startingVals;   
+    
+    int kth_iteration = 0;
+    while(kth_iteration < 50)
+    {
+        float iterationNorm = calcLTwoNorm(kthVals, mLength);
+        for(int i=0; i < mLength; i++)
+        {
+            float alpha = 0;
+            for(int j=0; j < mLength; j++)
+            {
+                if(i == j)
+                    continue;
+                alpha += matrix[i][j] * kthVals[j]; // k th iteration
+            }
+            kthVals[i] = ( b[i] - alpha ) / matrix[i][i];
+        }
+
+        error = iterationNorm - calcLTwoNorm(kthVals, mLength);
+        error = std::abs(error);
+        error /= iterationNorm;
+        std::cout << "ERROR: " << error << "\n";
+
+        if(stopError >= error)
+            break;
+
+    }
+
+    if(kth_iteration++ == 50)
+    {
+        std::cout << "50 Iterations elapsed" << "\n";
+    }
+    std::cout << "GAUSS SIEDEL METHOD: " << "\n";
+    printArray<float>(kthVals, mLength);
 }
 
 bool isDiogonlyDominant(float ** matrix, int length)
@@ -259,9 +311,29 @@ bool checkDiagonal(float** matrix, int length)
     }
 }
 
+float* getStartingValues(int num)
+{
+    std::string input;
+    float* vals = new float[num];
+    for(int i =0; i<num; i++)
+    {
+        std::cout << i << "th value: ";
+        std::getline(std::cin, input);
+
+        if(!isPureNumber(input))
+        {
+            vals[0] = INFINITY;
+            return vals;
+        }
+
+        vals[i] = std::stof(input);
+    }   
+    return vals;
+}
+
+
 int main(int charc, char** charv)
 {
-    //int equationCount = getUserEquationCount();
     std::pair< std::vector<std::string>, int>  returnVals =  getUserInput();
     int equationCount = returnVals.second;
 
@@ -271,12 +343,12 @@ int main(int charc, char** charv)
 
     if(checkDiagonal(coeffiecientMatrix, matrixLength))
     {
-        //float* outputs = gaussAndSolve(coeffiecientMatrix, solveValues, equationCount);
-        float* test = new float[matrixLength];
-            for(int i=0; i<matrixLength; i++)
-                test[i] = 0;;
-        jacobiIterative(10, test, coeffiecientMatrix, matrixLength, solveValues);
-        //delete outputs;
+        float* test = getStartingValues(matrixLength);
+        if(test[0] != INFINITY)
+        {
+            jacobiIterative(0, test, coeffiecientMatrix, matrixLength, solveValues);
+            gaussSidel(0, test, coeffiecientMatrix, matrixLength, solveValues);
+        }
     }
 
     for(int i=0; i<equationCount; i++)

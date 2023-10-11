@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <utility>
+#include <cmath>
 
 /**
  * @brief Function to print a 2D matrix
@@ -117,3 +118,9 @@ int setupCoeffiecientAndBMatrix(float** matrix, float* bmatrix, std::vector<std:
  * @return float* 
  */
 float* gaussAndSolve(float** matrix, float* bmatrix, int mLength) ;
+
+/**
+ * 
+*/
+float calcLTwoNorm(float* floats, int vectorLength);
+
