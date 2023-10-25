@@ -72,7 +72,7 @@ bool stringIsValid(std::string str) ;
  * @param rows 
  * @return std::vector<std::string> 
  */
-std::pair< std::vector<std::string>, int> manualRows() ; 
+std::vector<std::string> manualRows() ; 
 
 /**
  * @brief Function to get row coefficients from a file
@@ -81,7 +81,7 @@ std::pair< std::vector<std::string>, int> manualRows() ;
  * @param rows 
  * @return std::vector<std::string> 
  */
-std::pair< std::vector<std::string>, int> fromFile() ;
+std::vector<std::string> fromFile() ;
 
 /**
  * @brief Function to get user input for row coefficients
@@ -89,7 +89,7 @@ std::pair< std::vector<std::string>, int> fromFile() ;
  * @param eCount 
  * @return std::pair< std::vector<std::string>, int> 
  */
-std::pair< std::vector<std::string>, int> getUserInput() ;
+std::vector<std::string> getUserInput() ;
 
 /**
  * @brief Function to split a string into a vector of substrings
@@ -124,3 +124,7 @@ float* gaussAndSolve(float** matrix, float* bmatrix, int mLength) ;
 */
 float calcLTwoNorm(float* floats, int vectorLength);
 
+/**
+ * 
+*/
+float getUserMaxError();

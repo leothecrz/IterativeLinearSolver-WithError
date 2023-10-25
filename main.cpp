@@ -28,7 +28,6 @@ bool isPureNumber(const std::string str)
         if(c < 48 || c >57)
             return false;
     }
-        
     return true;
 }
 
@@ -65,27 +64,26 @@ int getUserEquationCount()
 {
     int stringnum = 0;
     std::string input;
-    do{
     do
     {
-        std::cout << "How many equations will you be inputing?" << std::endl;
-        std::getline(std::cin, input);
-        std::cout << std::endl;
-    } 
-    while( !isPureNumber(input) );
-    stringnum = stoi(input);
+        do
+        {
+            std::cout << "How many equations will you be inputing?" << std::endl;
+            std::getline(std::cin, input);
+            std::cout << std::endl;
+        } 
+        while( !isPureNumber(input) );
+        stringnum = stoi(input);
     }
     while(stringnum < 1);
     
     return stringnum;
 }
 
-std::pair< std::vector<std::string>, int> manualRows()
+std::vector<std::string> manualRows()
 {
     std::vector<std::string> stringArray;
-
     int rows = getUserEquationCount();
-
     for(int i=0; i<rows; i++)
     {
         std::cout << "\n >";
@@ -96,18 +94,15 @@ std::pair< std::vector<std::string>, int> manualRows()
         stringArray.push_back(in);
         
     }
-
-    return std::pair(stringArray, rows);
+    return stringArray;
 }
 
-std::pair< std::vector<std::string>, int> fromFile()
+std::vector<std::string> fromFile()
 {
-
     std::vector<std::string> stringArray;
     std::string input;
     std::cout << "Enter file path:" << std::endl;
     std::getline(std::cin, input, '\n');
-
     std::ifstream inputFile(input);
 
     if(inputFile.is_open())
@@ -124,13 +119,13 @@ std::pair< std::vector<std::string>, int> fromFile()
         }
         inputFile.close();
 
-        return std::pair(stringArray, i);
+        return stringArray;
     }
     std::cout << "Failed To open file: " << input << std::endl;
     exit(1);
 }
 
-std::pair< std::vector<std::string>, int> getUserInput()
+std::vector<std::string> getUserInput()
 {
     int val = -1;
     std::string input;
@@ -170,12 +165,30 @@ int setupCoeffiecientAndBMatrix(float** matrix, float* bmatrix, std::vector<std:
             if(isPureNumber(activeSplitString[j]) || isNegativeNumber(activeSplitString[j]))
                 matrix[i][j] = stof(activeSplitString[j]);
             else
+            {
+                std::cout << "ERROR READING MATRIX. (" << i << " " << j << ")\n";
+                for(int z=0; z<matrixLength; z++)
+                    delete matrix[z];
+                
+                delete matrix;
+                delete bmatrix;
                 exit(1); // ERROR
+            }
+                
         }
         if(isPureNumber(activeSplitString[matrixLength]) || isNegativeNumber(activeSplitString[matrixLength]) )
             bmatrix[i] = stof( activeSplitString[matrixLength] );
         else
+        {
+            std::cout << "ERROR READING B-MATRIX. (" << i << ")\n";
+            for(int z=0; z<matrixLength; z++)
+                delete matrix[z];
+            
+            delete matrix;
+            delete bmatrix;
             exit(1); // ERROR
+        }
+            
     }
     return matrixLength;
 }
@@ -313,6 +326,7 @@ bool checkDiagonal(float** matrix, int length)
 
 float* getStartingValues(int num)
 {
+    std::cout << "Enter the starting values of Xn's:";
     std::string input;
     float* vals = new float[num];
     for(int i =0; i<num; i++)
@@ -331,24 +345,58 @@ float* getStartingValues(int num)
     return vals;
 }
 
+float getUserMaxError()
+{
+    std::string errorString;
+    float out = INFINITY;
+    bool success = false;
+    do
+    {
+        std::cout << "Enter the maxmimu error allowed. \n >>";
+        std::getline(std::cin, errorString);
+        try
+        {
+            out = std::stof(errorString);
+            success = true;
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+
+        }
+    } while (!success);
+    return out;
+    
+}
 
 int main(int charc, char** charv)
 {
-    std::pair< std::vector<std::string>, int>  returnVals =  getUserInput();
-    int equationCount = returnVals.second;
+    std::vector<std::string>  returnVals =  getUserInput();
+    int equationCount = returnVals.size();
 
     float **coeffiecientMatrix = new float* [equationCount];
     float *solveValues = new float[equationCount];
-    int matrixLength = setupCoeffiecientAndBMatrix(coeffiecientMatrix, solveValues, returnVals.first);
+    int matrixLength = setupCoeffiecientAndBMatrix(coeffiecientMatrix, solveValues, returnVals);
 
     if(checkDiagonal(coeffiecientMatrix, matrixLength))
     {
         float* test = getStartingValues(matrixLength);
         if(test[0] != INFINITY)
         {
-            jacobiIterative(0, test, coeffiecientMatrix, matrixLength, solveValues);
-            gaussSidel(0, test, coeffiecientMatrix, matrixLength, solveValues);
+
+            float maxError = getUserMaxError();
+
+            std::cout << "Use Jacobi Method,(Else will use GaussSidel)? (y/n): ";
+            std::string in;
+            std::getline(std::cin, in);
+            
+            if(in[0] == 'y' || in[0] == 'Y')
+                jacobiIterative(maxError, test, coeffiecientMatrix, matrixLength, solveValues);
+            else
+                gaussSidel(maxError, test, coeffiecientMatrix, matrixLength, solveValues);
+
         }
+        delete test;
     }
 
     for(int i=0; i<equationCount; i++)
