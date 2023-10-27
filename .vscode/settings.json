@@ -50,6 +50,16 @@
         "numbers": "cpp",
         "ostream": "cpp",
         "sstream": "cpp",
-        "streambuf": "cpp"
+        "streambuf": "cpp",
+        "ios": "cpp",
+        "xiosbase": "cpp",
+        "xlocnum": "cpp",
+        "xmemory": "cpp",
+        "xstddef": "cpp",
+        "xstring": "cpp",
+        "xtr1common": "cpp",
+        "xutility": "cpp",
+        "bitset": "cpp",
+        "regex": "cpp"
     }
 }

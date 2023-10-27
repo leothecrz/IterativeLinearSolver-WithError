@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include <cmath>
+#include <regex>
 
 /**
  * @brief Function to print a 2D matrix

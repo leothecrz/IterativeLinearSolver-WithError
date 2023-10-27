@@ -28,6 +28,8 @@ bool isPureNumber(const std::string str)
         if(c < 48 || c >57)
             return false;
     }
+    if(str.length() < 1)
+        return false;
     return true;
 }
 
@@ -40,7 +42,20 @@ bool isNegativeNumber(const std::string str)
 
 bool stringIsValid(std::string str)
 {
-    return true;
+
+    std::regex numPat(R"(^\d+(\s\d+)*$)");
+    if(str.size() < 1)
+    {
+        std::cout << "Empty String Not Valid \n";
+        return false;
+    }
+
+    if(std::regex_match(str, numPat))
+    {
+        return true;
+    }
+    std::cout << "The String Is Not Valid \n";
+    return false;
 }
 
 std::vector<std::string> splitString(const std::string& str)
@@ -76,24 +91,25 @@ int getUserEquationCount()
         stringnum = stoi(input);
     }
     while(stringnum < 1);
-    
     return stringnum;
 }
 
 std::vector<std::string> manualRows()
 {
     std::vector<std::string> stringArray;
+    int i =0;
     int rows = getUserEquationCount();
-    for(int i=0; i<rows; i++)
+    do
     {
         std::cout << "\n >";
         std::string in;
         std::getline(std::cin, in, '\n');
         if(!stringIsValid(in))
-            exit(1);
+            continue;
+        i++;
         stringArray.push_back(in);
-        
-    }
+    } while ( (i != rows) );
+
     return stringArray;
 }
 
@@ -166,7 +182,7 @@ int setupCoeffiecientAndBMatrix(float** matrix, float* bmatrix, std::vector<std:
                 matrix[i][j] = stof(activeSplitString[j]);
             else
             {
-                std::cout << "ERROR READING MATRIX. (" << i << " " << j << ")\n";
+                std::cout << "ERROR READING MATRIX. (" << i << ", " << j << ")\n";
                 for(int z=0; z<matrixLength; z++)
                     delete matrix[z];
                 
@@ -275,12 +291,12 @@ void gaussSidel(float stopError, float* startingVals, float** matrix, int mLengt
         if(stopError >= error)
             break;
 
-    }
+        if(kth_iteration++ == 50)
+        {
+            std::cout << "50 Iterations elapsed" << "\n";
+        }
 
-    if(kth_iteration++ == 50)
-    {
-        std::cout << "50 Iterations elapsed" << "\n";
-    }
+    }   
     std::cout << "GAUSS SIEDEL METHOD: " << "\n";
     printArray<float>(kthVals, mLength);
 }
@@ -297,9 +313,9 @@ bool isDiogonlyDominant(float ** matrix, int length)
             if(j == i)
                 continue;
 
-            activeSum += matrix[i][j];
+            activeSum +=  std::abs( matrix[i][j] );
         }   
-        if(activeSum > matrix[i][i])
+        if(activeSum > std::abs( matrix[i][i] ) )
             return false;
     }
     return true;
@@ -318,7 +334,7 @@ bool checkDiagonal(float** matrix, int length)
         std::cout << "Continue ?(y/n) \n  -";
         std::string input;
         std::getline(std::cin, input);
-        if(input[0] == 'y')
+        if(input[0] == 'y' || input[0] == 'Y')
             return true;
         return false;
     }
@@ -362,7 +378,6 @@ float getUserMaxError()
         catch(const std::exception& e)
         {
             std::cerr << e.what() << '\n';
-
         }
     } while (!success);
     return out;
@@ -371,12 +386,11 @@ float getUserMaxError()
 
 int main(int charc, char** charv)
 {
-    std::vector<std::string>  returnVals =  getUserInput();
+    std::vector<std::string>  returnVals =  getUserInput(); // exits only if file is not found
     int equationCount = returnVals.size();
-
     float **coeffiecientMatrix = new float* [equationCount];
     float *solveValues = new float[equationCount];
-    int matrixLength = setupCoeffiecientAndBMatrix(coeffiecientMatrix, solveValues, returnVals);
+    int matrixLength = setupCoeffiecientAndBMatrix(coeffiecientMatrix, solveValues, returnVals); // on fail releases pointers and exits
 
     if(checkDiagonal(coeffiecientMatrix, matrixLength))
     {
