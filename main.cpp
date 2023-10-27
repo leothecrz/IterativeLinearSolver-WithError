@@ -291,7 +291,7 @@ void gaussSidel(float stopError, float* startingVals, float** matrix, int mLengt
         if(stopError >= error)
             break;
 
-        if(kth_iteration++ == 50)
+        if(++kth_iteration == 50)
         {
             std::cout << "50 Iterations elapsed" << "\n";
         }
