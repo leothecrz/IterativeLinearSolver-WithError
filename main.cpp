@@ -43,7 +43,7 @@ bool isNegativeNumber(const std::string str)
 bool stringIsValid(std::string str)
 {
 
-    std::regex numPat(R"(^\d+(\s\d+)*$)");
+    std::regex numPat(R"(^(-?)\d+(\s(-?)\d+)*$)");
     if(str.size() < 1)
     {
         std::cout << "Empty String Not Valid \n";
